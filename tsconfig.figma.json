@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2020"
+    ],
+    "types": [
+      "@figma/plugin-typings"
+    ]
+  },
+  "include": [
+    "figma-plugin/src/code.ts",
+    "figma-plugin/src/build/**/*.ts",
+    "figma-plugin/src/read/**/*.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": [
+    "shared/ae-convert.ts",
+    "shared/ae-raw.ts",
+    "shared/dom/**"
+  ]
+}

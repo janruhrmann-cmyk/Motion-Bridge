@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion Bridge</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- Shown while the panel starts, and by the settings window until its panel answers (main.ts). -->
+<div class="waiting" id="waiting">
+  <div class="waiting-card" role="status">
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="hint" id="waiting-text">Starting…</p>
+  </div>
+</div>
+
+<div class="app" id="app" hidden>
+  <header class="top">
+    <div class="brand"><img class="logo" src="assets/logo.svg" alt=""><span>Motion Bridge</span></div>
+    <button class="chip" id="figma-status" data-on="0" aria-expanded="false" aria-controls="pairing" title="Connection to the Figma plugin">
+      <span class="dot"></span><span id="figma-label">Figma not connected</span>
+    </button>
+  </header>
+
+  <div class="scroll">
+    <section class="callout" id="pairing" hidden>
+      <div class="callout-title" id="pairing-title">Connect the Figma plugin</div>
+      <p class="hint" id="pairing-hint"></p>
+      <div class="code-row">
+        <output class="code" id="code" aria-label="Pairing code">···-···</output>
+        <button class="ghost" id="copy-code">Copy</button>
+        <button class="ghost" id="new-code" title="Create a new code. Figma then has to be paired again.">New code</button>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="segmented" role="tablist" aria-label="What to send">
+        <button role="tab" id="mode-open" aria-selected="true" title="Send the composition whose timeline is in front">Active comp</button>
+        <button role="tab" id="mode-several" aria-selected="false" title="Choose several compositions of this project and send them in one go">Several comps</button>
+      </div>
+
+      <div id="open-view">
+        <div class="comp" id="comp-name">…</div>
+        <div class="meta" id="comp-meta"></div>
+      </div>
+
+      <div id="several-view" hidden>
+        <div class="toolbar">
+          <input type="search" id="filter" placeholder="Filter" aria-label="Filter compositions" spellcheck="false">
+          <label class="toggle" title="Also list compositions that are used inside another one">
+            <input type="checkbox" id="show-nested"><span>Precomps</span>
+          </label>
+        </div>
+        <div class="list comps" id="comp-list"></div>
+        <div class="list-foot">
+          <span id="comp-count"></span>
+          <span class="spacer"></span>
+          <button class="link" id="tick-all">All</button>
+          <button class="link" id="tick-none">None</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="options" hidden>
+      <div class="block-head">
+        <h2>Template options</h2>
+        <span class="badge" id="option-badge" hidden></span>
+      </div>
+      <div class="list" id="option-list"></div>
+      <p class="hint" id="option-hint"></p>
+    </section>
+
+    <!-- What the Figma page holds that was built from this project (told by the plugin), and the way to bring it up to date. -->
+    <section class="block" id="designs" hidden>
+      <div class="block-head">
+        <h2>Designs in Figma</h2>
+        <span class="badge" id="design-badge"></span>
+      </div>
+      <div class="list" id="design-list"></div>
+      <p class="hint" id="design-hint"></p>
+      <button class="wide" id="update" disabled title="Reads the ticked compositions again and rebuilds their frames in Figma where they are.">Update designs in Figma</button>
+    </section>
+
+    <section class="block result" id="result" hidden>
+      <div class="result-head"><span class="mark" aria-hidden="true"></span><span id="result-title"></span></div>
+      <div class="meta" id="result-meta"></div>
+      <details id="notes" hidden>
+        <summary id="notes-summary"></summary>
+        <ul id="note-list"></ul>
+      </details>
+    </section>
+  </div>
+
+  <footer class="bottom">
+    <div class="progress" id="progress" hidden><div class="bar" id="bar"></div></div>
+    <div class="status" id="message" role="status" aria-live="polite" data-kind="info"></div>
+    <!--
+      Send, pull, settings. In a panel with room they are the two buttons under the settings above.
+      Made small, the panel is these tiles and nothing else, and the third opens the settings in a window of their own.
+    -->
+    <div class="tiles" id="tiles">
+      <button class="tile" id="send" data-way="up" disabled>
+        <span class="icon">
+          <svg class="arrow" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 43V7M11 19 24 6l13 13" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="logo figma" viewBox="0 0 38 57" aria-hidden="true" focusable="false">
+            <path fill="#1abcfe" d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/>
+            <path fill="#0acf83" d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 1 1-19 0z"/>
+            <path fill="#ff7262" d="M19 0v19h9.5a9.5 9.5 0 1 0 0-19H19z"/>
+            <path fill="#f24e1e" d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z"/>
+            <path fill="#a259ff" d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z"/>
+          </svg>
+        </span>
+        <span class="label" id="send-label">Send to Figma</span>
+      </button>
+      <!-- The other direction: the frames that are selected in Figma become compositions here. -->
+      <button class="tile" id="pull" data-way="down" disabled>
+        <span class="icon">
+          <svg class="arrow" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 43V7M11 19 24 6l13 13" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="logo ae" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="7" fill="#00005b"/><text x="16" y="21.5" text-anchor="middle" font-family="'Adobe Clean', 'Segoe UI', system-ui, Arial, sans-serif" font-weight="700" font-size="14.5" fill="#9999ff">Ae</text></svg>
+        </span>
+        <span class="label" id="pull-label">Pull from Figma</span>
+      </button>
+      <button class="tile" id="settings" aria-label="Settings">
+        <span class="icon">
+          <svg class="gear" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </span>
+        <span class="dot" id="settings-dot" data-kind="off" aria-hidden="true"></span>
+      </button>
+      <button class="tile plain" id="cancel" hidden>
+        <span class="icon"><svg class="stop" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+        <span class="label" id="cancel-label">Cancel</span>
+      </button>
+    </div>
+    <div class="extras">
+      <button class="link" id="save" disabled title="Save a .motionbridge file to drop onto the Figma plugin - for another computer, or Figma in a browser.">Save file…</button>
+    </div>
+  </footer>
+</div>
+<script src="main.js"></script>
+</body>
+</html>

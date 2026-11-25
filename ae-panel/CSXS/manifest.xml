@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.motionbridge" ExtensionBundleVersion="1.0.0" ExtensionBundleName="Motion Bridge" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ExtensionList>
+    <Extension Id="com.motionbridge.panel" Version="1.0.0"/>
+    <Extension Id="com.motionbridge.settings" Version="1.0.0"/>
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="AEFT" Version="[18.0,99.9]"/>
+    </HostList>
+    <LocaleList>
+      <Locale Code="All"/>
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="9.0"/>
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.motionbridge.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <ScriptPath>./host/host.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>Motion Bridge</Menu>
+          <Geometry>
+            <Size>
+              <Height>420</Height>
+              <Width>300</Width>
+            </Size>
+            <!-- Small enough to dock as a strip of three buttons; below 200 x 240 the panel shows nothing else (main.ts, COMPACT_BELOW). -->
+            <MinSize>
+              <Height>36</Height>
+              <Width>44</Width>
+            </MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+    <!--
+      The settings of a panel that is docked too small to show them: the same page in a floating window,
+      opened by the panel's third button. It has no menu entry, no script of its own and no Node.js -
+      everything it shows comes from the panel, and everything pressed in it is done by the panel.
+    -->
+    <Extension Id="com.motionbridge.settings">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Modeless</Type>
+          <Geometry>
+            <Size>
+              <Height>520</Height>
+              <Width>320</Width>
+            </Size>
+            <MinSize>
+              <Height>300</Height>
+              <Width>260</Width>
+            </MinSize>
+            <MaxSize>
+              <Height>1400</Height>
+              <Width>640</Width>
+            </MaxSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

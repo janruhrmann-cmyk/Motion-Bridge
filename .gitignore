@@ -1,0 +1,12 @@
+node_modules/
+dist/
+# the built script, copied next to ae-panel/index.html by the build
+/ae-panel/main.js
+# release staging (npm run release) and signed packages
+/release/
+*.zxp
+# signing certificates must never be committed
+*.p12
+*.pfx
+*.log
+.DS_Store

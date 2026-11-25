@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": []
+  },
+  "include": [
+    "figma-plugin/src/ui.ts",
+    "shared/format.ts",
+    "shared/protocol.ts",
+    "shared/notes.ts",
+    "shared/dom/**/*.ts"
+  ]
+}

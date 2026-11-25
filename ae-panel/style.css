@@ -1,0 +1,335 @@
+/*
+ * Motion Bridge - After Effects panel.
+ *
+ * The background is After Effects' own panel colour (set from main.ts), and
+ * everything else is drawn as a tint on top of it, so the panel sits right at
+ * every interface brightness. The violet (taken from the brand gradient) marks
+ * small accents (focus, links, the pairing code); --accent-ink is the shade for
+ * text, at least 4.5:1 against the panel. The tiles wear the logo's gradient;
+ * its pastels are too light for white, so their text is a deep navy (at least
+ * 8:1 against every stop).
+ */
+:root {
+  --bg: #232323;
+  --text: #e6e6e6;
+  --dim: #a3a3a3;
+  --raise: rgba(255, 255, 255, 0.05);
+  --hover: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.12);
+  --line-strong: rgba(255, 255, 255, 0.24);
+  --accent: #a065f4;
+  --accent-ink: #c9a4ff;
+  --brand: linear-gradient(100deg, #f7a39a 0%, #e693ec 36%, #8bdcf0 70%, #86e3cc 100%);
+  --brand-ink: #0b1230;
+  --ok: #4cc38a;
+  --bad: #ff7a6b;
+  --radius: 6px;
+}
+:root[data-theme="light"] {
+  --text: #1f1f1f;
+  --dim: #646464;
+  --raise: rgba(0, 0, 0, 0.04);
+  --hover: rgba(0, 0, 0, 0.07);
+  --line: rgba(0, 0, 0, 0.15);
+  --line-strong: rgba(0, 0, 0, 0.32);
+  --accent-ink: #7a3fd1;
+  --ok: #17794a;
+  --bad: #c4321f;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 12px/1.45 "Adobe Clean", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.app { display: flex; flex-direction: column; height: 100%; min-width: 200px; }
+
+/* ---------------------------------------------------------------- waiting */
+
+.waiting { height: 100%; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; padding: 20px 16px; }
+.waiting-card { width: 100%; max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------------------------------------------ header */
+
+.top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; min-width: 0; }
+.brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .logo { width: 18px; height: 18px; flex: none; }
+
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--line-strong); color: var(--text); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--dim); }
+.chip[data-on="1"] { color: var(--text); }
+.chip[data-on="1"] .dot { border-color: var(--ok); background: var(--ok); }
+
+/* -------------------------------------------------------------------- body */
+
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 14px; }
+.scroll::-webkit-scrollbar, .list::-webkit-scrollbar { width: 8px; }
+.scroll::-webkit-scrollbar-thumb, .list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+.block { display: flex; flex-direction: column; gap: 8px; flex: none; }
+.block-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+h2 { margin: 0; font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.badge { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.badge[data-kind="error"] { color: var(--bad); }
+.hint, .meta { margin: 0; color: var(--dim); font-size: 11px; }
+.hint b { color: var(--text); font-weight: 600; }
+.hint[data-kind="error"] { color: var(--bad); }
+
+.callout {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--raise);
+  border: 1px solid var(--line);
+}
+.callout-title { font-weight: 600; }
+.code-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.code {
+  flex: 1;
+  min-width: 96px;
+  color: var(--accent-ink);
+  font: 600 17px/1.3 Consolas, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.14em;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.segmented { display: flex; padding: 2px; border-radius: var(--radius); background: var(--raise); border: 1px solid var(--line); }
+.segmented button {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-selected="true"] { background: var(--hover); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+
+/* Template names share a long beginning and differ at the end ("... - 4x5 - en-EN"), so names wrap instead of being cut off. */
+.comp { font-size: 13px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.comp[data-empty="1"] { font-weight: 400; color: var(--dim); }
+
+.toolbar { display: flex; align-items: center; gap: 8px; }
+input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--raise);
+  color: var(--text);
+  font: inherit;
+  -webkit-user-select: text;
+  user-select: text;
+}
+input[type="search"]::placeholder { color: var(--dim); }
+input[type="search"]:focus { outline: none; border-color: var(--accent); }
+.toggle { display: inline-flex; align-items: center; gap: 5px; color: var(--dim); font-size: 11px; cursor: pointer; white-space: nowrap; }
+.toggle:hover { color: var(--text); }
+
+input[type="checkbox"] { margin: 0; width: 13px; height: 13px; accent-color: var(--accent); flex: none; cursor: pointer; }
+input[type="checkbox"]:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.list { display: flex; flex-direction: column; gap: 1px; }
+.list.comps { max-height: 204px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 3px; }
+.row { flex: none; display: flex; align-items: flex-start; gap: 8px; min-height: 24px; padding: 4px 6px; border-radius: 4px; cursor: pointer; line-height: 16px; }
+.row input { margin-top: 1.5px; }
+.row:hover { background: var(--hover); }
+.row .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.row .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.row .sub { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; }
+.row .side { flex: none; color: var(--dim); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row .tag { flex: none; padding: 0 5px; border-radius: 3px; background: var(--hover); color: var(--dim); font-size: 10px; line-height: 16px; }
+.row[data-nested="1"] .name { color: var(--dim); }
+.empty { padding: 10px 6px; color: var(--dim); font-size: 11px; text-align: center; }
+.list-foot { display: flex; align-items: center; gap: 10px; color: var(--dim); font-size: 11px; }
+.spacer { flex: 1; }
+
+/* ------------------------------------------------------------------ result */
+
+.result { padding: 10px; border-radius: var(--radius); background: var(--raise); border: 1px solid var(--line); gap: 4px; -webkit-user-select: text; user-select: text; }
+.result-head { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+.mark { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ok); position: relative; }
+.mark::after { content: ""; position: absolute; left: 4.5px; top: 2.5px; width: 3px; height: 6px; border: solid var(--bg); border-width: 0 1.6px 1.6px 0; transform: rotate(45deg); }
+.result[data-kind="error"] .mark { background: var(--bad); }
+.result[data-kind="error"] .mark::after { left: 6.2px; top: 3px; width: 0; height: 5px; border-width: 0 1.6px 0 0; transform: none; box-shadow: 0 6.4px 0 -0.1px var(--bg); }
+.result[data-kind="note"] .mark { background: var(--dim); }
+details { margin-top: 4px; }
+summary { cursor: pointer; color: var(--accent-ink); font-size: 11px; font-weight: 600; outline: none; }
+summary:focus-visible { text-decoration: underline; }
+details ul { margin: 6px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
+details li { color: var(--dim); font-size: 11px; }
+details li b { color: var(--text); font-weight: 600; }
+
+/* ------------------------------------------------------------------ footer */
+
+.bottom { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+.progress { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.bar { height: 100%; width: 0; border-radius: 2px; background: var(--brand); background-size: 300px 100%; transition: width 0.25s ease; }
+.status { min-height: 17px; color: var(--dim); font-size: 11px; -webkit-user-select: text; user-select: text; }
+.status:empty { display: none; }
+.status[data-kind="ok"] { color: var(--ok); }
+.status[data-kind="error"] { color: var(--bad); }
+
+button {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) { background: var(--hover); }
+button:disabled { opacity: 0.4; cursor: default; }
+
+/* ------------------------------------------------------------------- tiles */
+
+/* Send and pull, side by side and as wide as the room allows; in a narrow panel one under the other. */
+.tiles { display: flex; gap: 6px; flex-wrap: wrap; }
+button.tile {
+  position: relative;
+  flex: 1 1 128px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 8px 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-weight: 600;
+  overflow: hidden;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+button.tile:hover:not(:disabled) { background: var(--brand); filter: brightness(1.06) saturate(1.1); }
+button.tile:active:not(:disabled) { filter: brightness(0.95); }
+button.tile:disabled { opacity: 0.4; filter: saturate(0.5); }
+button.tile[data-running="1"]:disabled { opacity: 1; filter: none; }
+.tile .label { position: relative; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The logo's column: the arrow travels through it, behind the logo, from one edge of the tile to the other. */
+.tile .icon { position: relative; flex: none; align-self: stretch; width: 28px; display: grid; place-items: center; }
+.tile .logo { position: relative; filter: drop-shadow(0 1px 2px rgba(11, 18, 48, 0.25)); }
+.tile .logo.ae { width: 22px; height: 22px; }
+.tile .logo.figma { width: 14px; height: 21px; }
+.tile .gear, .tile .stop { width: 22px; height: 22px; }
+.tile .gear { transition: transform 0.5s cubic-bezier(0.3, 0, 0.2, 1); }
+.tile:hover:not(:disabled) .gear, .tile:focus-visible .gear { transform: rotate(90deg); }
+/* The arrow is not there at rest. Under the pointer it travels the way the composition (or the frames) will. */
+.tile .arrow { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
+.tile[data-way="down"] .arrow { transform: rotate(180deg); }
+.tile:hover:not(:disabled) .arrow, .tile:focus-visible .arrow, .tile[data-running="1"] .arrow { opacity: 1; animation: travel-up 0.9s cubic-bezier(0.5, 0, 0.3, 1) infinite; }
+.tile[data-way="down"]:hover:not(:disabled) .arrow, .tile[data-way="down"]:focus-visible .arrow, .tile[data-way="down"][data-running="1"] .arrow { animation-name: travel-down; }
+@keyframes travel-up { from { transform: translateY(105%); } to { transform: translateY(-105%); } }
+@keyframes travel-down { from { transform: translateY(-105%) rotate(180deg); } to { transform: translateY(105%) rotate(180deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .tile .arrow, .tile .gear { animation: none !important; transition: none; }
+}
+/* The state of things at a glance, on the settings tile: Figma connected or not, at work, or something to read. */
+.tile .dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #8c93a8; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85); }
+.tile .dot[data-kind="on"] { background: #14ae5c; }
+.tile .dot[data-kind="busy"] { background: var(--accent); animation: pulse 0.9s ease-in-out infinite; }
+.tile .dot[data-kind="error"] { background: #dc3412; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+/* With room for the settings the third tile has nothing to open. */
+#settings { display: none; }
+/* Cancel takes the place of the two buttons' row mate: plain, and as wide as the panel. */
+button.tile.plain { flex: 1 1 100%; height: 30px; padding: 0 12px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-weight: 400; }
+button.tile.plain:hover:not(:disabled) { background: var(--hover); filter: none; }
+button.tile.plain .icon { display: none; }
+/* "Save file" is the rare way out; it sits under the two buttons, to the right. */
+.extras { display: flex; justify-content: flex-end; }
+.extras button.link:disabled { opacity: 0.4; }
+
+/* --------------------------------------------------------------- compact */
+
+/*
+ * A panel too small for its settings (main.ts decides, see COMPACT_BELOW) is
+ * the three tiles and nothing else, so it can be docked as a strip anywhere:
+ * side by side in a low panel, one under the other in a narrow one.
+ */
+html[data-compact="1"] .top, html[data-compact="1"] .scroll, html[data-compact="1"] .extras, html[data-compact="1"] .status { display: none; }
+html[data-compact="1"] .app { min-width: 0; }
+html[data-compact="1"] .bottom { position: relative; flex: 1; min-height: 0; padding: 5px; gap: 0; border-top: 0; justify-content: center; }
+html[data-compact="1"] .tiles { flex: 1; min-height: 0; max-height: 64px; flex-wrap: nowrap; gap: 5px; }
+html[data-compact="1"] button.tile, html[data-compact="1"] button.tile.plain { flex: 1 1 0; height: auto; min-height: 0; padding: 0; }
+html[data-compact="1"] .tile .label { display: none; }
+html[data-compact="1"] .tile .icon, html[data-compact="1"] button.tile.plain .icon { display: grid; width: 100%; }
+html[data-compact="1"] #settings { display: inline-flex; }
+/* While something runs, the settings (all greyed out then) make way for the one thing left to do: stop it. */
+html[data-compact="1"][data-busy="1"] #settings { display: none; }
+html[data-compact="1"] .progress { position: absolute; left: 5px; right: 5px; bottom: 1px; height: 3px; }
+@media (max-aspect-ratio: 4/5) {
+  html[data-compact="1"] .tiles { flex-direction: column; max-height: 210px; }
+}
+/* Tiles this small keep only what fits. */
+@media (max-height: 40px), (max-width: 110px) {
+  html[data-compact="1"] .tile .logo.ae { width: 18px; height: 18px; }
+  html[data-compact="1"] .tile .logo.figma { width: 12px; height: 18px; }
+  html[data-compact="1"] .tile .gear, html[data-compact="1"] .tile .stop { width: 18px; height: 18px; }
+  html[data-compact="1"] .tile .dot { top: 3px; right: 3px; width: 6px; height: 6px; }
+}
+/* A strip has no room for words while it waits. */
+html[data-compact="1"] .waiting { padding: 4px 8px; }
+html[data-compact="1"] .waiting .hint { display: none; }
+
+button.ghost { height: 24px; padding: 0 8px; border-color: var(--line); color: var(--dim); font-size: 11px; }
+button.ghost:hover:not(:disabled) { color: var(--text); }
+button.link { height: auto; padding: 0; border: 0; background: none; color: var(--accent-ink); font-size: 11px; font-weight: 600; }
+button.link:hover:not(:disabled) { background: none; text-decoration: underline; }
+/* An action that belongs to the block it sits in, as wide as the block. */
+button.wide { width: 100%; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }

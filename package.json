@@ -1,0 +1,30 @@
+{
+  "name": "motion-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Moves After Effects compositions, with their motion, to Figma Motion (and back).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janruhrmann-cmyk/motion-bridge.git"
+  },
+  "homepage": "https://github.com/janruhrmann-cmyk/motion-bridge#readme",
+  "bugs": "https://github.com/janruhrmann-cmyk/motion-bridge/issues",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.panel.json && tsc -p tsconfig.figma.json && tsc -p tsconfig.ui.json && tsc -p tsconfig.tests.json",
+    "test": "node --test \"tests/*.test.ts\"",
+    "check": "node scripts/check-host.mjs && npm run typecheck && npm test",
+    "install:ae": "node scripts/install-ae.mjs",
+    "uninstall:ae": "node scripts/install-ae.mjs --remove",
+    "release": "npm run build && node scripts/stage-release.mjs"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.143.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* The violet (taken from the brand gradient) marks small accents; the ink variant is for violet
+     text, at least 4.5:1 against Figma's light and dark backgrounds. The main button wears the
+     logo's gradient with deep navy text (at least 8:1 against every stop). */
+  :root {
+    --accent: #a065f4;
+    --accent-ink: #7a3fd1;
+    --brand: linear-gradient(100deg, #f7a39a 0%, #e693ec 36%, #8bdcf0 70%, #86e3cc 100%);
+    --brand-ink: #0b1230;
+    --text: var(--figma-color-text, #1e1e1e);
+    --dim: var(--figma-color-text-secondary, #757575);
+    --line: var(--figma-color-border, #e6e6e6);
+    --bg: var(--figma-color-bg, #fff);
+    --raise: var(--figma-color-bg-secondary, #f5f5f5);
+    --ok: var(--figma-color-bg-success, #14ae5c);
+    --bad: var(--figma-color-text-danger, #dc3412);
+  }
+  .figma-dark { --accent-ink: #c9a4ff; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 11px/16px Inter, system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  main { flex: 1; min-height: 0; overflow-y: auto; }
+
+  /* Figma's own window bar already shows the plugin's icon and name, so the window starts with its tiles. */
+  #content { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+  p { margin: 0; }
+  .hint { color: var(--dim); }
+
+  /* --------------------------------------------------------------- status */
+  .status { display: flex; align-items: flex-start; gap: 8px; }
+  .status .words { flex: 1; min-width: 0; }
+  .status .dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--figma-color-icon-tertiary, #b3b3b3); flex: none; }
+  /* The "what is this?" button sits at the end of the status line, level with its first line of text. */
+  .about-toggle { flex: none; width: 24px; height: 24px; margin: -4px 0; padding: 0; border-radius: 50%; display: grid; place-items: center; color: var(--dim); }
+  .about-toggle:hover:not(:disabled), .about-toggle[aria-expanded="true"] { color: var(--text); background: var(--raise); }
+  .about-toggle svg { width: 14px; height: 14px; }
+  .status[data-state="offline"] .dot { animation: pulse 1.4s ease-in-out infinite; }
+  .status[data-state="pair"] .dot { background: var(--figma-color-bg-warning, #ffcd29); }
+  .status[data-state="connected"] .dot { background: var(--ok); }
+  .status[data-state="busy"] .dot { background: var(--accent); animation: pulse 0.9s ease-in-out infinite; }
+  .status .title { font-weight: 600; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+
+  /* ---------------------------------------------------------------- cards */
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .label { font-weight: 600; }
+  .pair-row { display: flex; gap: 6px; }
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: inherit;
+    font: 600 14px/1 ui-monospace, Menlo, Consolas, monospace;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  input[type="text"]::placeholder { color: var(--figma-color-text-tertiary, #b3b3b3); font-weight: 400; }
+  input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  input[type="text"][aria-invalid="true"] { border-color: var(--bad); }
+  button {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--raise); }
+  button.primary { border-color: transparent; background: var(--brand); color: var(--brand-ink); font-weight: 700; }
+  button.primary:hover:not(:disabled) { background: var(--brand); filter: brightness(1.06) saturate(1.1); }
+  button.primary:active:not(:disabled) { filter: brightness(0.95); }
+  button:focus-visible, input[type="checkbox"]:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  .error { color: var(--bad); }
+
+  .progress { height: 4px; border-radius: 2px; background: var(--raise); overflow: hidden; }
+  .bar { height: 100%; width: 0; border-radius: 2px; background: var(--brand); background-size: 300px 100%; transition: width 0.2s ease; }
+  .progress[data-open="1"] .bar { width: 40% !important; animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+
+  /* --------------------------------------------------------------- result */
+  .result-head { display: flex; align-items: flex-start; gap: 8px; font-weight: 600; overflow-wrap: anywhere; }
+  .mark { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--ok); position: relative; }
+  .mark::after { content: ""; position: absolute; left: 5.5px; top: 3px; width: 3.5px; height: 7px; border: solid #fff; border-width: 0 1.8px 1.8px 0; transform: rotate(45deg); }
+  .result[data-kind="error"] .mark { background: var(--bad); }
+  .result[data-kind="error"] .mark::after { left: 7.1px; top: 3.5px; width: 0; height: 5.5px; border-width: 0 1.8px 0 0; transform: none; box-shadow: 0 7px 0 -0.1px #fff; }
+  .stats { display: flex; gap: 6px; }
+  .stat { flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; background: var(--raise); }
+  .stat b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat span { display: block; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  details summary { cursor: pointer; color: var(--accent-ink); font-weight: 600; border-radius: 2px; }
+  details ul { margin: 6px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+  details li { color: var(--dim); }
+  details li b { color: var(--text); font-weight: 600; }
+
+  /* ---------------------------------------------------------------- tiles */
+  /* The three things the window is for: push, pull, settings. Folded, the window is these and nothing else. */
+  .tiles { flex: none; position: relative; display: flex; gap: 6px; padding: 8px; }
+  .tile {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: var(--brand);
+    color: var(--brand-ink);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    transition: filter 0.15s ease, opacity 0.15s ease;
+  }
+  .tile:hover:not(:disabled) { background: var(--brand); filter: brightness(1.06) saturate(1.1); }
+  .tile:active:not(:disabled) { filter: brightness(0.95); }
+  .tile:disabled { opacity: 0.4; filter: saturate(0.5); }
+  .tile[data-running="1"]:disabled { opacity: 1; filter: none; }
+  .tile .logo { position: relative; flex: none; filter: drop-shadow(0 1px 2px rgba(11, 18, 48, 0.25)); }
+  .tile .logo.ae { width: 26px; height: 26px; }
+  .tile .logo.figma { width: 17px; height: 26px; }
+  .tile .gear { width: 24px; height: 24px; transition: transform 0.5s cubic-bezier(0.3, 0, 0.2, 1); }
+  .tile:hover:not(:disabled) .gear, .tile:focus-visible .gear { transform: rotate(90deg); }
+  /* The arrow is not there at rest. Under the pointer it travels behind the logo, the way the frames will. */
+  .tile .arrow { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; }
+  .tile[data-way="down"] .arrow { transform: rotate(180deg); }
+  .tile:hover:not(:disabled) .arrow, .tile:focus-visible .arrow, .tile[data-running="1"] .arrow { opacity: 1; animation: travel-up 0.9s cubic-bezier(0.5, 0, 0.3, 1) infinite; }
+  .tile[data-way="down"]:hover:not(:disabled) .arrow, .tile[data-way="down"]:focus-visible .arrow, .tile[data-way="down"][data-running="1"] .arrow { animation-name: travel-down; }
+  @keyframes travel-up { from { transform: translateY(105%); } to { transform: translateY(-105%); } }
+  @keyframes travel-down { from { transform: translateY(-105%) rotate(180deg); } to { transform: translateY(105%) rotate(180deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .tile .arrow, .tile .gear { animation: none !important; transition: none; }
+  }
+  /* The connection at a glance, on the settings tile: the same dot as in the status line. */
+  .tile .dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #8c93a8; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85); }
+  .tiles[data-state="offline"] .tile .dot { animation: pulse 1.4s ease-in-out infinite; }
+  .tiles[data-state="pair"] .tile .dot { background: #f5a300; }
+  .tiles[data-state="connected"] .tile .dot { background: #14ae5c; }
+  .tiles[data-state="busy"] .tile .dot { background: var(--accent); animation: pulse 0.9s ease-in-out infinite; }
+  .tiles[data-alert="1"] .tile .dot { background: #dc3412; animation: none; }
+  /* Folded, the progress of a transfer runs along the bottom edge. */
+  .tiles .progress { position: absolute; left: 8px; right: 8px; bottom: 2px; height: 3px; }
+  body:not(.compact) .tiles .progress { display: none; }
+  body:not(.compact) .tiles { padding-bottom: 0; }
+  body.compact main, body.compact footer { display: none; }
+  body.compact .veil { inset: 3px; padding: 4px; border-radius: 8px; font-size: 10px; line-height: 13px; }
+
+  .setup b { color: var(--text); font-weight: 600; white-space: nowrap; }
+
+  /* --------------------------------------------------------------- footer */
+  footer { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--line); }
+  .switch { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .switch input { margin: 0; accent-color: var(--accent); }
+  .link { height: auto; padding: 0; border: 0; background: none; color: var(--accent-ink); font-weight: 600; }
+  .link:hover:not(:disabled) { background: none; text-decoration: underline; }
+
+  .veil {
+    position: fixed;
+    inset: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    border: 2px dashed var(--accent);
+    border-radius: 10px;
+    background: var(--bg);
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<!-- Push, pull, settings: all of the window when it is folded, its top row when it is not. -->
+<nav class="tiles" id="tiles" data-state="offline" aria-label="Motion Bridge">
+  <button class="tile" id="push" data-way="up" disabled aria-label="Push to After Effects">
+    <svg class="arrow" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 43V7M11 19 24 6l13 13" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="logo ae" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="7" fill="#00005b"/><text x="16" y="21.5" text-anchor="middle" font-family="Inter, 'Segoe UI', system-ui, Arial, sans-serif" font-weight="700" font-size="14.5" fill="#9999ff">Ae</text></svg>
+  </button>
+  <button class="tile" id="pull" data-way="down" disabled aria-label="Pull from After Effects">
+    <svg class="arrow" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 43V7M11 19 24 6l13 13" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="logo figma" viewBox="0 0 38 57" aria-hidden="true" focusable="false">
+      <path fill="#1abcfe" d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/>
+      <path fill="#0acf83" d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 1 1-19 0z"/>
+      <path fill="#ff7262" d="M19 0v19h9.5a9.5 9.5 0 1 0 0-19H19z"/>
+      <path fill="#f24e1e" d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z"/>
+      <path fill="#a259ff" d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z"/>
+    </svg>
+  </button>
+  <button class="tile" id="unfold" aria-expanded="true" aria-controls="main" aria-label="Settings">
+    <svg class="gear" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    <span class="dot" aria-hidden="true"></span>
+  </button>
+  <div class="progress" id="mini-progress" hidden><div class="bar" id="mini-bar"></div></div>
+</nav>
+
+<main id="main">
+  <div id="content">
+    <header class="status" id="status" data-state="offline">
+      <span class="dot"></span>
+      <div class="words">
+        <div class="title" id="status-text">Looking for After Effects…</div>
+        <p class="hint" id="status-hint">Open Window › Extensions › Motion Bridge in After Effects.</p>
+      </div>
+      <button class="about-toggle" id="about-toggle" aria-expanded="false" aria-controls="about" title="What is Motion Bridge?" aria-label="What is Motion Bridge?">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="4.5" r="1.1" fill="currentColor"/><path d="M8 7.2v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <section class="card" id="about" hidden>
+      <div class="label">What is Motion Bridge?</div>
+      <p class="hint">It imports your After Effects animations into Figma Motion automatically. Send a composition from the After Effects panel, or pull the one that is open there (the second tile), and it is built here as a frame, motion included. When the composition changes later, <b>Update designs</b> rebuilds the frame where it is.</p>
+      <p class="hint">The other way round, <b>Push to After Effects</b> (the first tile) turns the frames you select into compositions: layers, text, pictures and Figma Motion keyframes.</p>
+    </section>
+
+    <section class="card" id="designs" hidden>
+      <div class="label" id="designs-title"></div>
+      <p class="hint" id="designs-hint"></p>
+      <button class="primary" id="update" title="After Effects reads the compositions again and the designs are rebuilt where they are. With designs selected, only those.">Update designs</button>
+      <button class="link" id="update-all" hidden></button>
+    </section>
+
+    <section class="card setup" id="setup" hidden>
+      <div class="label">New to Motion Bridge?</div>
+      <p class="hint">This plugin works together with a free panel in After Effects. Install it once, then open <b>Window › Extensions › Motion Bridge</b> in After Effects.</p>
+      <button class="primary" id="get-panel">Get the After Effects panel ↗</button>
+    </section>
+
+    <section class="card" id="pair" hidden>
+      <label class="label" for="code">Pairing code</label>
+      <div class="pair-row">
+        <input type="text" id="code" maxlength="7" placeholder="ABC-123" autocomplete="off" spellcheck="false">
+        <button class="primary" id="pair-go" disabled>Pair</button>
+      </div>
+      <p class="hint" id="pair-help">It is shown in the After Effects panel. You only do this once.</p>
+      <p class="error" id="pair-error" hidden>That code does not match the one in After Effects.</p>
+    </section>
+
+    <section class="card" id="work" hidden>
+      <div class="label" id="work-title"></div>
+      <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+      <p class="hint" id="work-hint"></p>
+    </section>
+
+    <section class="card result" id="result" hidden>
+      <div class="result-head"><span class="mark" aria-hidden="true"></span><span id="result-title"></span></div>
+      <div class="stats" id="result-stats"></div>
+      <p class="hint" id="result-meta"></p>
+      <button id="show">Show on canvas</button>
+      <details id="notes" hidden>
+        <summary id="notes-summary"></summary>
+        <ul id="result-notes"></ul>
+      </details>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <label class="switch" title="Precomps become components and template options become variants you can switch in Figma. Off: everything is built into one frame, with the current settings only.">
+    <input type="checkbox" id="components" checked><span>Build as components</span>
+  </label>
+  <button class="link" id="pick" title="Import a .motionbridge file saved from the After Effects panel. You can also drop it onto this window.">Import file…</button>
+  <input type="file" id="file" accept=".motionbridge,.json,application/json" hidden>
+</footer>
+
+<div class="veil" id="veil" hidden>Drop the .motionbridge file to build it</div>
+<script>/*__SCRIPT__*/</script>
+</body>
+</html>
