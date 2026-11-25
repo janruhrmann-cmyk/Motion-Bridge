@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/janruhrmann-cmyk/motion-bridge/releases/latest/download/Motion-Bridge.zxp"><b>Download the After Effects panel (.zxp)</b></a>
   ·
-  <a href="https://www.figma.com/community/plugin/1707102371430825907">Get the Figma plugin</a>
+  <a href="https://www.figma.com/community/plugin/1707505113413005385">Get the Figma plugin</a>
   ·
   <a href="#install">Install guide</a>
 </p>
@@ -66,7 +66,7 @@ You need both halves: the **panel** in After Effects and the **plugin** in Figma
 
 ### 1. Figma plugin
 
-Open the plugin's page in the [Figma Community](https://www.figma.com/community/plugin/1707102371430825907)
+Open the plugin's page in the [Figma Community](https://www.figma.com/community/plugin/1707505113413005385)
 and click **Open in…** or **Save**. In a design file, run it from the
 **Actions** menu (or *Plugins*) › **Motion Bridge**.
 
